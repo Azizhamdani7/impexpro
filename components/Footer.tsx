@@ -1,19 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { site } from "@/lib/site";
 
 export function Footer() {
-  const reduceMotion = useReducedMotion();
-
   return (
-    <motion.footer
-      initial={reduceMotion ? false : { y: 22, opacity: 0 }}
-      whileInView={reduceMotion ? undefined : { y: 0, opacity: 1 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <footer className="motion-item">
       <div className="footer-grid">
         <div className="footer-brand">
           <div className="footer-logo">
@@ -59,6 +49,6 @@ export function Footer() {
         <p>© 2025 Impex-Pro Business Consultant · Impex Trading Corporation. All rights reserved.</p>
         <p>Built for <Link href="/services">Global Trade Excellence</Link></p>
       </div>
-    </motion.footer>
+    </footer>
   );
 }

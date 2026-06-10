@@ -1,14 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
 export function ContactForm() {
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState("");
-  const reduceMotion = useReducedMotion();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,27 +50,13 @@ export function ContactForm() {
   }
 
   return (
-    <motion.div
-      className="contact-form-wrap"
-      initial={reduceMotion ? false : { y: 20, opacity: 0 }}
-      whileInView={reduceMotion ? undefined : { y: 0, opacity: 1 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="contact-form-wrap motion-item">
       <h3>Request a Free Consultation</h3>
-      <AnimatePresence initial={false}>
-        {message ? (
-          <motion.div
-            className={`form-msg ${state === "success" ? "success" : "error"}`}
-            initial={reduceMotion ? false : { y: -8, opacity: 0 }}
-            animate={reduceMotion ? undefined : { y: 0, opacity: 1 }}
-            exit={reduceMotion ? undefined : { y: -8, opacity: 0 }}
-            transition={{ duration: 0.24 }}
-          >
-            {message}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {message ? (
+        <div className={`form-msg form-msg-enter ${state === "success" ? "success" : "error"}`}>
+          {message}
+        </div>
+      ) : null}
       <form onSubmit={onSubmit}>
         <input
           type="text"
@@ -135,15 +119,14 @@ export function ContactForm() {
             required
           />
         </div>
-        <motion.button
+        <button
           type="submit"
           className="form-submit"
           disabled={state === "submitting"}
-          whileTap={reduceMotion || state === "submitting" ? undefined : { scale: 0.985 }}
         >
           {state === "submitting" ? "Sending..." : "Send Message →"}
-        </motion.button>
+        </button>
       </form>
-    </motion.div>
+    </div>
   );
 }
