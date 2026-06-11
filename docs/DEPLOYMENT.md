@@ -2,13 +2,42 @@
 
 This is a Node-hosted Next.js app. Do not deploy `out/`.
 
-## Build
+## Local Production Check
 
 ```bash
 npm install
 npm run build
 npm run start
 ```
+
+`npm run start` runs the root startup file:
+
+```txt
+server.js
+```
+
+## cPanel Node.js App Settings
+
+Use these settings in HosterPK/cPanel Node.js App Manager:
+
+```txt
+Node version: 20.x
+Application startup file: server.js
+```
+
+The server reads `process.env.PORT` from cPanel and listens on `0.0.0.0`, which is compatible with cPanel reverse proxy routing.
+
+## cPanel Deployment Sequence
+
+After pulling the latest Git changes in cPanel Git Version Control:
+
+```txt
+Run NPM Install
+Run JS Script -> build
+Restart App
+```
+
+Do not set the startup file to `node_modules/...`. cPanel requires the real root file `server.js`.
 
 ## Production Environment Variables
 

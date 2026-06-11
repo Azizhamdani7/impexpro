@@ -6,7 +6,7 @@
     "hash-password": "node scripts/hash-password.mjs",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
     "lint": "eslint ."
   },
   "dependencies": {
