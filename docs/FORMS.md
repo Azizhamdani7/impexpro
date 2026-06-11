@@ -28,13 +28,24 @@ CONTACT_RECEIVER_EMAIL=receiver@example.com
 
 Gmail requires an App Password for `SMTP_PASS`.
 
-If SMTP fails after MongoDB save, the submission remains stored and the server logs the email error.
+If SMTP fails after MongoDB save, the submission remains stored. The API response includes `emailSent: false` and `emailWarning`, and the server logs a safe SMTP error summary.
+
+For Vercel, set these values in Project Settings -> Environment Variables, then redeploy. Do not rely on a local `.env` file in production.
+
+Gmail App Passwords are often displayed with spaces. The app removes spaces automatically before sending, so either format works:
+
+```env
+SMTP_PASS=abcd efgh ijkl mnop
+SMTP_PASS=abcdefghijklmnop
+```
 
 Verify SMTP:
 
 ```bash
 node scripts/verify-smtp.mjs
 ```
+
+The verification script signs in and sends a real test email to `CONTACT_RECEIVER_EMAIL`.
 
 ## Admin Replies
 

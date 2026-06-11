@@ -2,8 +2,85 @@ import nodemailer from "nodemailer";
 import type { ContactSubmission } from "@/lib/submissions";
 import { site } from "@/lib/site";
 
-function smtpConfigured() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+type SmtpConfig =
+  | {
+      ok: true;
+      host: string;
+      port: number;
+      secure: boolean;
+      user: string;
+      pass: string;
+      receiver: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+    };
+
+function readEnv(name: string) {
+  return (process.env[name] || "").trim();
+}
+
+function normalizeSmtpPassword(value: string) {
+  return value.replace(/\s+/g, "");
+}
+
+function getSmtpConfig(): SmtpConfig {
+  const host = readEnv("SMTP_HOST") || "smtp.gmail.com";
+  const port = Number(readEnv("SMTP_PORT") || 465);
+  const user = readEnv("SMTP_USER");
+  const pass = normalizeSmtpPassword(readEnv("SMTP_PASS"));
+  const receiver = readEnv("CONTACT_RECEIVER_EMAIL") || user;
+  const missing = [
+    ["SMTP_USER", user],
+    ["SMTP_PASS", pass],
+    ["CONTACT_RECEIVER_EMAIL", receiver]
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length) {
+    return {
+      ok: false,
+      reason: `Missing SMTP environment variable${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}.`
+    };
+  }
+
+  if (!Number.isFinite(port)) {
+    return { ok: false, reason: "SMTP_PORT must be a valid number." };
+  }
+
+  return {
+    ok: true,
+    host,
+    port,
+    secure: port === 465,
+    user,
+    pass,
+    receiver
+  };
+}
+
+function formatMailError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return { message: "Unknown SMTP delivery error." };
+  }
+
+  const details = error as Error & {
+    code?: string;
+    command?: string;
+    responseCode?: number;
+    response?: string;
+  };
+
+  return {
+    name: details.name,
+    message: details.message,
+    code: details.code,
+    command: details.command,
+    responseCode: details.responseCode,
+    response: details.response
+  };
 }
 
 function escapeHtml(value: string | undefined) {
@@ -37,15 +114,18 @@ function formatSubmittedAt(value: string) {
   }).format(date);
 }
 
-function createSmtpTransporter() {
+function createSmtpTransporter(config: Extract<SmtpConfig, { ok: true }>) {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: Number(process.env.SMTP_PORT || 465) === 465,
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
+      user: config.user,
+      pass: config.pass
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000
   });
 }
 
@@ -247,26 +327,34 @@ function createHtmlEmail(submission: ContactSubmission) {
 }
 
 export async function sendContactEmail(submission: ContactSubmission) {
-  if (!smtpConfigured()) {
-    console.warn("[contact-email] SMTP is not configured. Submission saved without email delivery.");
-    return { sent: false, reason: "SMTP is not configured." };
+  const config = getSmtpConfig();
+
+  if (!config.ok) {
+    console.warn(`[contact-email] ${config.reason} Submission saved without email delivery.`);
+    return { sent: false, reason: config.reason };
   }
 
-  const transporter = createSmtpTransporter();
-
-  const receiver = process.env.CONTACT_RECEIVER_EMAIL || process.env.SMTP_USER;
+  const transporter = createSmtpTransporter(config);
   const subject = createSubject(submission);
 
-  await transporter.sendMail({
-    from: `"Impex-Pro Website" <${process.env.SMTP_USER}>`,
-    to: receiver,
-    replyTo: submission.email,
-    subject,
-    text: createPlainTextEmail(submission),
-    html: createHtmlEmail(submission)
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"Impex-Pro Website" <${config.user}>`,
+      to: config.receiver,
+      replyTo: submission.email,
+      subject,
+      text: createPlainTextEmail(submission),
+      html: createHtmlEmail(submission)
+    });
 
-  return { sent: true };
+    return { sent: true, messageId: result.messageId };
+  } catch (error) {
+    console.error("[contact-email] SMTP delivery failed.", formatMailError(error));
+    return {
+      sent: false,
+      reason: "SMTP delivery failed. Check Vercel SMTP environment variables and Gmail App Password."
+    };
+  }
 }
 
 function createReplyPlainTextEmail(
@@ -350,22 +438,32 @@ export async function sendSubmissionReply(
   submission: ContactSubmission,
   reply: { subject: string; body: string }
 ) {
-  if (!smtpConfigured()) {
-    console.warn("[submission-reply] SMTP is not configured. Reply was not sent.");
-    return { sent: false, reason: "SMTP is not configured." };
+  const config = getSmtpConfig();
+
+  if (!config.ok) {
+    console.warn(`[submission-reply] ${config.reason} Reply was not sent.`);
+    return { sent: false, reason: config.reason };
   }
 
-  const transporter = createSmtpTransporter();
+  const transporter = createSmtpTransporter(config);
   const subject = cleanHeader(cleanText(reply.subject, "Re: Your Impex-Pro Inquiry"));
 
-  await transporter.sendMail({
-    from: `"Impex-Pro" <${process.env.SMTP_USER}>`,
-    to: submission.email,
-    replyTo: process.env.SMTP_USER,
-    subject,
-    text: createReplyPlainTextEmail(submission, { ...reply, subject }),
-    html: createReplyHtmlEmail(submission, { ...reply, subject })
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"Impex-Pro" <${config.user}>`,
+      to: submission.email,
+      replyTo: config.user,
+      subject,
+      text: createReplyPlainTextEmail(submission, { ...reply, subject }),
+      html: createReplyHtmlEmail(submission, { ...reply, subject })
+    });
 
-  return { sent: true };
+    return { sent: true, messageId: result.messageId };
+  } catch (error) {
+    console.error("[submission-reply] SMTP delivery failed.", formatMailError(error));
+    return {
+      sent: false,
+      reason: "SMTP delivery failed. Check SMTP environment variables and Gmail App Password."
+    };
+  }
 }

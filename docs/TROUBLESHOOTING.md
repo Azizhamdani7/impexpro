@@ -54,6 +54,19 @@ Then run:
 node scripts/verify-smtp.mjs
 ```
 
+On Vercel, set these variables in Project Settings -> Environment Variables and redeploy after changes. A local `.env` file is not used by the deployed Vercel app.
+
+Open the `/api/contact` Network response after a test submission. If the submission was saved but email failed, the JSON will include:
+
+```json
+{
+  "emailSent": false,
+  "emailWarning": "SMTP delivery failed. Check Vercel SMTP environment variables and Gmail App Password."
+}
+```
+
+Also check Vercel Function Logs for `[contact-email] SMTP delivery failed.`. Common causes are an invalid Gmail App Password, missing `CONTACT_RECEIVER_EMAIL`, disabled 2-Step Verification on the Gmail account, or environment variables changed without redeploying.
+
 ## Admin Reply Cannot Be Sent
 
 Portal replies require SMTP. If SMTP is missing or invalid, the reply is not saved as sent.

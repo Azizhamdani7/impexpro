@@ -32,6 +32,10 @@ SMTP_PASS=your-gmail-app-password
 CONTACT_RECEIVER_EMAIL=receiver@example.com
 ```
 
+Set these in Vercel Project Settings -> Environment Variables for Production, Preview, and Development as needed. Redeploy after changing any value.
+
+`SMTP_PASS` must be a Gmail App Password, not the normal Gmail login password. Spaces in the app password are accepted because the app normalizes them before sending.
+
 Generate the admin password hash:
 
 ```bash

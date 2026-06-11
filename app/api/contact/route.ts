@@ -11,15 +11,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ errors: result.errors }, { status: 400 });
     }
 
-    try {
-      await sendContactEmail(result.submission);
-    } catch (error) {
-      console.error("[contact-email]", error);
-    }
+    const emailDelivery = await sendContactEmail(result.submission);
 
     return NextResponse.json({
       ok: true,
-      message: "Thank you. Your message has been sent successfully."
+      message: emailDelivery.sent
+        ? "Thank you. Your message has been sent successfully."
+        : "Thank you. Your message has been saved successfully, but the email notification could not be sent.",
+      emailSent: emailDelivery.sent,
+      emailWarning: emailDelivery.sent ? undefined : emailDelivery.reason
     });
   } catch (error) {
     console.error("[contact-submit]", error);
