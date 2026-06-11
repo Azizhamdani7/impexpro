@@ -11,31 +11,23 @@ Routes:
 /api/auth/me
 ```
 
-Sessions use signed HTTP-only cookies. No `localStorage` is used.
+Sessions use signed HTTP-only cookies. The app does not use `localStorage` for admin auth.
 
-## Local Password
-
-```txt
-admin123
-```
-
-## Required Env
+## Required Variables
 
 ```env
 AUTH_SECRET=long-random-secret
-ADMIN_PASSWORD_HASH=\$2b\$12\$...
+ADMIN_PASSWORD_HASH=bcrypt-hash
 ```
 
-`.env.local` is created automatically from `.env.example` during `npm install`.
+Create these in `.env` for local development or in your hosting environment variables for production.
 
-## Change Admin Password
+## Generate Password Hash
 
 ```bash
 npm run hash-password -- "new-secure-password"
 ```
 
-For local development, copy the generated `ADMIN_PASSWORD_HASH=...` line into `.env.local`.
+Copy the generated bcrypt hash into `ADMIN_PASSWORD_HASH`.
 
-For cPanel production, set `ADMIN_PASSWORD_HASH` in Node.js App Environment Variables to the raw hash value printed by the script, then restart the app.
-
-For production, always change both `AUTH_SECRET` and `ADMIN_PASSWORD_HASH`.
+Production passwords must be changed before deployment.

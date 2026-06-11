@@ -3,6 +3,17 @@ import { readJsonFile, writeJsonFile } from "@/lib/file-store";
 
 export type SubmissionStatus = "unread" | "read" | "replied";
 
+export type SubmissionThreadItem = {
+  id: string;
+  type: "incoming" | "outgoing";
+  from: "customer" | "admin";
+  to: "admin" | string;
+  subject: string;
+  body: string;
+  createdAt: string;
+  deliveryStatus?: "sent" | "failed";
+};
+
 export type ContactSubmission = {
   id: string;
   type: string;
@@ -18,6 +29,7 @@ export type ContactSubmission = {
   status: SubmissionStatus;
   createdAt: string;
   updatedAt: string;
+  thread?: SubmissionThreadItem[];
 };
 
 const SUBMISSIONS_FILE = "submissions.json";
@@ -35,6 +47,35 @@ function clean(value: unknown, max = 1000) {
 
 function emailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function isValidEmail(email: string) {
+  return emailValid(email);
+}
+
+export function defaultReplySubject(submission: ContactSubmission) {
+  const service = submission.service ? ` - ${submission.service}` : "";
+  return `Re: Your Impex-Pro Inquiry${service}`;
+}
+
+export function normalizeSubmissionThread(submission: ContactSubmission): SubmissionThreadItem[] {
+  if (Array.isArray(submission.thread) && submission.thread.length) {
+    return [...submission.thread].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }
+
+  return [
+    {
+      id: `${submission.id}-incoming`,
+      type: "incoming",
+      from: "customer",
+      to: "admin",
+      subject: defaultReplySubject(submission).replace(/^Re:\s*/i, ""),
+      body: submission.message,
+      createdAt: submission.createdAt
+    }
+  ];
 }
 
 export async function getSubmissions() {
@@ -96,7 +137,28 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
     userAgent,
     status: "unread",
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    thread: [
+      {
+        id: randomUUID(),
+        type: "incoming",
+        from: "customer",
+        to: "admin",
+        subject: defaultReplySubject({
+          id: "",
+          type: clean(input.type, 80) || "contact",
+          name: clean(input.name, 180),
+          email,
+          message,
+          service: clean(input.service, 180) || undefined,
+          status: "unread",
+          createdAt: now,
+          updatedAt: now
+        }),
+        body: message,
+        createdAt: now
+      }
+    ]
   };
 
   await saveSubmissions([submission, ...submissions]);
@@ -111,6 +173,38 @@ export async function updateSubmissionStatus(id: string, status: SubmissionStatu
   submissions[index] = { ...submissions[index], status, updatedAt: new Date().toISOString() };
   await saveSubmissions(submissions);
   return submissions[index];
+}
+
+export async function addSubmissionReply(id: string, reply: { subject: string; body: string }) {
+  const submissions = await getSubmissions();
+  const index = submissions.findIndex((submission) => submission.id === id);
+  if (index < 0) return null;
+
+  const now = new Date().toISOString();
+  const existing = submissions[index];
+  const thread = normalizeSubmissionThread(existing);
+  const updated: ContactSubmission = {
+    ...existing,
+    status: "replied",
+    updatedAt: now,
+    thread: [
+      ...thread,
+      {
+        id: randomUUID(),
+        type: "outgoing",
+        from: "admin",
+        to: existing.email,
+        subject: clean(reply.subject, 240) || defaultReplySubject(existing),
+        body: clean(reply.body, 8000),
+        createdAt: now,
+        deliveryStatus: "sent"
+      }
+    ]
+  };
+
+  submissions[index] = updated;
+  await saveSubmissions(submissions);
+  return updated;
 }
 
 export async function deleteSubmission(id: string) {

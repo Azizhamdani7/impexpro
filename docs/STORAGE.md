@@ -7,7 +7,7 @@ data/blogs.json
 data/submissions.json
 ```
 
-The files are created automatically by `npm install` or when the app first needs them.
+The files are created automatically when the app first reads or writes them.
 
 The `data/` folder is not inside `public/`, so visitors cannot download it directly.
 

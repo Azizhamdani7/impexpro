@@ -28,8 +28,8 @@ export function validateBlogInput(input: Partial<BlogFormInput>) {
   const slug = slugify(cleanText(input.slug, 200) || title);
   const excerpt = cleanText(input.excerpt, 500);
   const content = cleanText(input.content, 100000);
-  const category = cleanText(input.category, 80);
-  const author = cleanText(input.author, 120);
+  const category = cleanText(input.category, 80) || "General";
+  const author = cleanText(input.author, 120) || "Impex-Pro Team";
   const status: BlogStatus = input.status === "published" ? "published" : "draft";
   const coverImage = cleanText(input.coverImage, 1000) || undefined;
   const metaTitle = cleanText(input.metaTitle, 180) || undefined;
@@ -39,10 +39,12 @@ export function validateBlogInput(input: Partial<BlogFormInput>) {
 
   if (!title) errors.title = "Title is required.";
   if (!slug) errors.slug = "Slug is required.";
-  if (!excerpt) errors.excerpt = "Excerpt is required.";
-  if (!content) errors.content = "Content is required.";
-  if (!category) errors.category = "Category is required.";
-  if (!author) errors.author = "Author is required.";
+  if (status === "published") {
+    if (!excerpt) errors.excerpt = "Excerpt is required before publishing.";
+    if (!content) errors.content = "Content is required before publishing.";
+    if (!metaTitle) errors.metaTitle = "Meta title is required before publishing.";
+    if (!metaDescription) errors.metaDescription = "Meta description is required before publishing.";
+  }
   if (coverImage && !/^https?:\/\//.test(coverImage) && !coverImage.startsWith("/")) {
     errors.coverImage = "Cover image must be a public URL or a /public path.";
   }

@@ -37,6 +37,18 @@ function formatSubmittedAt(value: string) {
   }).format(date);
 }
 
+function createSmtpTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: Number(process.env.SMTP_PORT || 465) === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+}
+
 function labelValue(label: string, value: string | undefined) {
   return `
     <tr>
@@ -240,15 +252,7 @@ export async function sendContactEmail(submission: ContactSubmission) {
     return { sent: false, reason: "SMTP is not configured." };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT || 465),
-    secure: Number(process.env.SMTP_PORT || 465) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  const transporter = createSmtpTransporter();
 
   const receiver = process.env.CONTACT_RECEIVER_EMAIL || process.env.SMTP_USER;
   const subject = createSubject(submission);
@@ -260,6 +264,107 @@ export async function sendContactEmail(submission: ContactSubmission) {
     subject,
     text: createPlainTextEmail(submission),
     html: createHtmlEmail(submission)
+  });
+
+  return { sent: true };
+}
+
+function createReplyPlainTextEmail(
+  submission: ContactSubmission,
+  reply: { subject: string; body: string }
+) {
+  return [
+    cleanText(reply.body, ""),
+    "",
+    "--",
+    "Impex-Pro Business Consultant",
+    site.url,
+    "",
+    "Original inquiry summary",
+    `Name: ${cleanText(submission.name)}`,
+    `Email: ${cleanText(submission.email)}`,
+    `Service: ${cleanText(submission.service)}`,
+    `Submitted: ${formatSubmittedAt(submission.createdAt)}`,
+    "",
+    cleanText(submission.message, "")
+  ].join("\n");
+}
+
+function createReplyHtmlEmail(
+  submission: ContactSubmission,
+  reply: { subject: string; body: string }
+) {
+  const preview = `Impex-Pro replied to your inquiry: ${cleanText(reply.subject)}`;
+
+  return `
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(cleanText(reply.subject, "Impex-Pro Reply"))}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#eef2f7;color:#0b203d;font-family:Arial,Helvetica,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preview)}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f7;margin:0;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:680px;margin:0 auto;">
+            <tr>
+              <td style="background:#0b203d;border-radius:22px 22px 0 0;padding:30px;">
+                <div style="color:#d4a73f;font-size:12px;line-height:18px;text-transform:uppercase;letter-spacing:3px;font-weight:800;">Impex-Pro Business Consultant</div>
+                <h1 style="margin:8px 0 0;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;font-weight:700;">Inquiry Response</h1>
+                <p style="margin:16px 0 0;color:#c8d2df;font-size:15px;line-height:24px;">Thank you for contacting Impex-Pro. Our team has replied to your website inquiry.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border-radius:0 0 18px 18px;padding:28px 30px;border:1px solid #e2e8f0;border-top:0;box-shadow:0 12px 30px rgba(11,32,61,0.08);">
+                <h2 style="margin:0 0 16px;color:#0b203d;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:32px;">${escapeHtml(cleanText(reply.subject, "Impex-Pro Reply"))}</h2>
+                <div style="background:#f8fafc;border-left:4px solid #d4a73f;border-radius:12px;padding:18px 20px;color:#263449;font-size:16px;line-height:27px;white-space:pre-wrap;">${escapeHtml(cleanText(reply.body, ""))}</div>
+              </td>
+            </tr>
+            <tr><td style="height:16px;line-height:16px;">&nbsp;</td></tr>
+            <tr>
+              <td style="background:#ffffff;border-radius:18px;padding:22px 26px;border:1px solid #e2e8f0;">
+                <div style="color:#d4a73f;font-size:11px;line-height:16px;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin-bottom:10px;">Original Inquiry</div>
+                <p style="margin:0 0 12px;color:#0b203d;font-size:15px;line-height:24px;"><strong>${escapeHtml(cleanText(submission.name))}</strong> asked about <strong>${escapeHtml(cleanText(submission.service, "general services"))}</strong>.</p>
+                <div style="background:#f8fafc;border-radius:12px;padding:16px 18px;color:#4b5563;font-size:14px;line-height:23px;white-space:pre-wrap;">${escapeHtml(cleanText(submission.message, ""))}</div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 18px 8px;color:#6b7280;font-size:13px;line-height:21px;">
+                <strong style="color:#0b203d;">${escapeHtml(site.brand)}</strong><br />
+                You can reply directly to this email to continue the conversation.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `;
+}
+
+export async function sendSubmissionReply(
+  submission: ContactSubmission,
+  reply: { subject: string; body: string }
+) {
+  if (!smtpConfigured()) {
+    console.warn("[submission-reply] SMTP is not configured. Reply was not sent.");
+    return { sent: false, reason: "SMTP is not configured." };
+  }
+
+  const transporter = createSmtpTransporter();
+  const subject = cleanHeader(cleanText(reply.subject, "Re: Your Impex-Pro Inquiry"));
+
+  await transporter.sendMail({
+    from: `"Impex-Pro" <${process.env.SMTP_USER}>`,
+    to: submission.email,
+    replyTo: process.env.SMTP_USER,
+    subject,
+    text: createReplyPlainTextEmail(submission, { ...reply, subject }),
+    html: createReplyHtmlEmail(submission, { ...reply, subject })
   });
 
   return { sent: true };

@@ -10,18 +10,13 @@ npm run build
 npm run start
 ```
 
-When `NODE_ENV=production`, setup does not create `.env.local`. Use the cPanel Node.js App Environment Variables panel or your host's environment-variable settings.
+## Production Environment Variables
 
-## Required Production Env
+Set these in cPanel Node.js App Environment Variables or your host's environment panel:
 
 ```env
 AUTH_SECRET=your-long-random-production-secret
-ADMIN_PASSWORD_HASH=\$2b\$12\$...
-```
-
-Optional SMTP email delivery:
-
-```env
+ADMIN_PASSWORD_HASH=bcrypt-hash
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_USER=your-gmail@gmail.com
@@ -35,25 +30,19 @@ Generate the admin password hash:
 npm run hash-password -- "your-secure-password"
 ```
 
-For cPanel, set `ADMIN_PASSWORD_HASH` in the Node.js App Environment Variables panel to the raw hash value printed by the script, then restart the app.
+Restart the app after changing environment variables.
 
 ## Data
 
-The app writes runtime data here:
+Runtime data is stored in:
 
 ```txt
 data/blogs.json
 data/submissions.json
 ```
 
-Make sure the Node.js app user can write to the project folder. Back up `data/` before redeploying.
-
-The setup script still creates missing `data/` JSON files in production.
+The app creates missing data files automatically. Make sure the Node.js app user can write to the project folder and back up `data/` before redeploying.
 
 ## Public Site Details
 
-Public phone, email, address, WhatsApp, and site URL are configured in:
-
-```txt
-lib/site-config.ts
-```
+Public phone, email, address, WhatsApp, and site URL are configured in `lib/site-config.ts`.

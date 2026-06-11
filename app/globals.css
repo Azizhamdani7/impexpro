@@ -620,6 +620,10 @@ footer{
 
 /* ── RESPONSIVE ── */
 @media(max-width:1100px){
+  .nav-links{display:none;}
+  .hamburger{display:flex;}
+  .hero{flex-direction:column;align-items:flex-start;justify-content:center;gap:44px;}
+  .hero-stats{margin-top:0;}
   .footer-grid{grid-template-columns:1fr 1fr;gap:36px;}
   .masonry{columns:2;}
   .vid-grid{grid-template-columns:1fr 1fr;}
@@ -627,8 +631,9 @@ footer{
 @media(max-width:900px){
   .about-grid,.training-grid,.contact-grid{grid-template-columns:1fr;gap:44px;}
   .testi-card{flex:0 0 calc(50% - 11px);}
-  .nav-links,.nav-cta{display:none;}
-  .hamburger{display:flex;}
+}
+@media(max-width:520px){
+  .nav-cta{display:none;}
 }
 @media(max-width:700px){
   .form-row{grid-template-columns:1fr;}
@@ -638,6 +643,7 @@ footer{
   .vid-grid{grid-template-columns:1fr;}
   .footer-grid{grid-template-columns:1fr;}
   .contact-form-wrap{padding:28px 22px;}
+  .wa-fab{width:52px;height:52px;right:20px;bottom:20px;}
 }
 @media(max-width:600px){
   .testi-card{flex:0 0 85vw;}
@@ -777,6 +783,8 @@ footer{
   font-size:42px;line-height:1.05;margin-bottom:12px;font-weight:600;
 }
 .admin-login-card p{color:var(--text-mid);line-height:1.7;margin-bottom:24px;}
+.admin-login-card .form-msg{display:block;}
+.admin-login-error{margin:-4px 0 18px;}
 .admin-shell{min-height:100vh;background:var(--off-white);display:grid;grid-template-columns:280px minmax(0,1fr);}
 .admin-sidebar{
   background:var(--navy);color:#fff;padding:28px 22px;position:sticky;top:0;height:100vh;
@@ -846,11 +854,15 @@ footer{
 .status-pill.unread{background:rgba(212,164,55,.14);color:#9a7218;}
 .status-pill.read{background:rgba(22,62,114,.1);color:var(--royal);}
 .status-pill.replied{background:rgba(37,211,102,.12);color:#138a3d;}
+.status-pill.sent{background:rgba(37,211,102,.12);color:#138a3d;}
+.status-pill.failed{background:rgba(220,53,69,.08);color:#c23b3b;}
 .admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
 .admin-actions a,.admin-actions button{
   border:none;background:transparent;color:var(--gold);font-weight:700;font-size:13px;padding:0;
 }
-.admin-actions button{color:#c23b3b;}
+.admin-actions .danger-action{color:#c23b3b;}
+.admin-editor-actions{display:flex;flex-direction:column;gap:10px;}
+.admin-editor-actions .btn,.admin-editor-actions .form-submit{width:100%;justify-content:center;text-align:center;}
 .admin-editor-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;}
 .admin-editor .content-editor{min-height:480px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;line-height:1.65;}
 .field-error{display:block;color:#dc3545;font-size:12px;margin-top:4px;}
@@ -860,6 +872,15 @@ footer{
 .admin-detail-grid a{color:var(--gold);font-weight:700;}
 .admin-message-box{white-space:pre-wrap;line-height:1.8;color:var(--text-mid);background:var(--off-white);border-radius:12px;padding:22px;margin-bottom:24px;}
 .admin-detail-actions{justify-content:flex-start;}
+.admin-section-title{font-size:16px;color:var(--navy);margin:4px 0 12px;}
+.admin-reply-form textarea{min-height:170px;}
+.thread-list{display:flex;flex-direction:column;gap:14px;}
+.thread-item{border:1px solid var(--gray-light);border-radius:14px;padding:18px;background:#fff;}
+.thread-item.outgoing{background:rgba(212,164,55,.06);border-color:rgba(212,164,55,.26);}
+.thread-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.thread-meta span:not(.status-pill){font-size:11px;color:var(--text-light);font-weight:800;text-transform:uppercase;letter-spacing:1.2px;}
+.thread-item h3{font-size:16px;color:var(--navy);margin-bottom:8px;}
+.thread-item p{white-space:pre-wrap;color:var(--text-mid);line-height:1.75;}
 .admin-setup-notice h2{
   font-family:var(--font-cormorant),'Cormorant Garamond',serif;color:var(--navy);
   font-size:34px;line-height:1.1;margin-bottom:12px;font-weight:600;
@@ -902,6 +923,7 @@ footer{
   .admin-sidebar{position:relative;height:auto;}
   .admin-main{padding:28px 5%;}
   .admin-stats{grid-template-columns:1fr;}
+  .admin-detail-grid{grid-template-columns:1fr;}
   .admin-toolbar input,.admin-toolbar select{max-width:none;}
 }
 @media(max-width:560px){

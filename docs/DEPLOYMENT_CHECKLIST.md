@@ -1,7 +1,7 @@
 # Deployment Checklist
 
 - Use Node.js 20+.
-- Set production variables in the cPanel Node.js App panel, not `.env.local`.
+- Set production variables in `.env` or in the cPanel Node.js App panel.
 - Run `npm install`.
 - Set production `AUTH_SECRET`.
 - Set production `ADMIN_PASSWORD_HASH`.

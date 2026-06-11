@@ -4,52 +4,37 @@
 
 ```bash
 npm install
+```
+
+Create `.env` using `docs/ENVIRONMENT_SETUP.md`, then run:
+
+```bash
 npm run dev
 ```
 
-That is all.
-
-The setup script runs during `npm install` and creates missing local files:
-
-```txt
-.env.local
-data/blogs.json
-data/submissions.json
-```
-
-This `.env.local` auto-creation is for local development only.
-
 ## Admin Login
 
-Open `/admin/login`.
+Admin login is password-only. Use the password that matches `ADMIN_PASSWORD_HASH`.
 
-```txt
-Password: admin123
-```
-
-Change the local admin password:
+To change it:
 
 ```bash
 npm run hash-password -- "new-secure-password"
 ```
 
-Copy the generated `ADMIN_PASSWORD_HASH=...` line into `.env.local`, then restart `npm run dev`.
+Paste the generated hash into `.env`, then restart the dev server.
 
-## Change Public Contact Details
+## Data Files
 
-Edit:
+The app creates these automatically when needed:
 
 ```txt
-lib/site-config.ts
+data/blogs.json
+data/submissions.json
 ```
 
-This is where the site URL, phone number, WhatsApp link, public email, and address live.
+No manual JSON file creation is required.
 
-## Useful Commands
+## Public Contact Details
 
-```bash
-npm run setup
-npm run lint
-npm run build
-npm run hash-password -- "new-password"
-```
+Edit `lib/site-config.ts` for the site URL, phone number, WhatsApp link, public email, and address.

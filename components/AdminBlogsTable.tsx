@@ -15,6 +15,7 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [deleting, setDeleting] = useState("");
+  const [updating, setUpdating] = useState("");
 
   const filtered = useMemo(() => {
     return blogs.filter((blog) => {
@@ -32,6 +33,27 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
     const response = await fetch(`/api/admin/blogs/${id}`, { method: "DELETE" });
     setDeleting("");
     if (response.ok) router.refresh();
+  }
+
+  async function updateStatus(blog: Blog, nextStatus: "draft" | "published") {
+    setUpdating(blog.id);
+    const response = await fetch(`/api/admin/blogs/${blog.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...blog,
+        status: nextStatus
+      })
+    });
+    setUpdating("");
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      window.alert(data.errors ? Object.values(data.errors).join("\n") : data.error || "Unable to update blog.");
+      return;
+    }
+
+    router.refresh();
   }
 
   return (
@@ -53,6 +75,7 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
               <th>Status</th>
               <th>Category</th>
               <th>Updated</th>
+              <th>Published</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -66,11 +89,23 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
                 <td><span className={`status-pill ${blog.status}`}>{blog.status}</span></td>
                 <td>{blog.category}</td>
                 <td>{formatDate(blog.updatedAt)}</td>
+                <td>{formatDate(blog.publishedAt)}</td>
                 <td>
                   <div className="admin-actions">
-                    {blog.status === "published" ? <Link href={`/blogs/${blog.slug}`}>Preview</Link> : null}
+                    <Link href={blog.status === "published" ? `/blogs/${blog.slug}` : `/admin/blogs/preview/${blog.id}`}>
+                      Preview
+                    </Link>
                     <Link href={`/admin/blogs/edit/${blog.id}`}>Edit</Link>
-                    <button type="button" onClick={() => remove(blog.id)} disabled={deleting === blog.id}>
+                    {blog.status === "published" ? (
+                      <button type="button" onClick={() => updateStatus(blog, "draft")} disabled={updating === blog.id}>
+                        {updating === blog.id ? "Updating" : "Unpublish"}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => updateStatus(blog, "published")} disabled={updating === blog.id}>
+                        {updating === blog.id ? "Updating" : "Publish"}
+                      </button>
+                    )}
+                    <button className="danger-action" type="button" onClick={() => remove(blog.id)} disabled={deleting === blog.id}>
                       {deleting === blog.id ? "Deleting" : "Delete"}
                     </button>
                   </div>
@@ -79,7 +114,7 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
             ))}
             {!filtered.length ? (
               <tr>
-                <td colSpan={5}>No blogs found.</td>
+                <td colSpan={6}>No blogs found.</td>
               </tr>
             ) : null}
           </tbody>

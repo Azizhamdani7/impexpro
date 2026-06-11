@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminChrome } from "@/components/AdminChrome";
 import { SubmissionActions } from "@/components/SubmissionActions";
-import { formatDate } from "@/lib/blog-shared";
-import { getSubmission } from "@/lib/submissions";
+import { SubmissionReplyComposer } from "@/components/SubmissionReplyComposer";
+import { formatDate, formatDateTime } from "@/lib/blog-shared";
+import { defaultReplySubject, getSubmission, normalizeSubmissionThread } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function SubmissionDetailPage({ params }: PageProps) {
   const { id } = await params;
   const submission = await getSubmission(id);
   if (!submission) notFound();
+  const thread = normalizeSubmissionThread(submission);
 
   return (
     <AdminChrome>
@@ -40,8 +42,33 @@ export default async function SubmissionDetailPage({ params }: PageProps) {
           <div><strong>Service</strong><span>{submission.service || "-"}</span></div>
           <div><strong>Submitted</strong><span>{formatDate(submission.createdAt)}</span></div>
         </div>
+        <h2 className="admin-section-title">Original Message</h2>
         <div className="admin-message-box">{submission.message}</div>
         <SubmissionActions id={submission.id} />
+      </section>
+      <section className="admin-panel">
+        <div className="admin-panel-head">
+          <h2>Reply from Portal</h2>
+        </div>
+        <SubmissionReplyComposer id={submission.id} defaultSubject={defaultReplySubject(submission)} />
+      </section>
+      <section className="admin-panel">
+        <div className="admin-panel-head">
+          <h2>Conversation History</h2>
+        </div>
+        <div className="thread-list">
+          {thread.map((item) => (
+            <article key={item.id} className={`thread-item ${item.type}`}>
+              <div className="thread-meta">
+                <span>{item.type === "incoming" ? "Customer" : "Admin"}</span>
+                <span>{formatDateTime(item.createdAt)}</span>
+                {item.deliveryStatus ? <span className={`status-pill ${item.deliveryStatus}`}>{item.deliveryStatus}</span> : null}
+              </div>
+              <h3>{item.subject}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </AdminChrome>
   );

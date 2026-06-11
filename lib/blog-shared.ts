@@ -62,6 +62,19 @@ export function formatDate(date?: string | Date | null) {
   }).format(parsed);
 }
 
+export function formatDateTime(date?: string | Date | null) {
+  if (!date) return "Draft";
+  const parsed = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "Draft";
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(parsed);
+}
+
 export function excerptFromContent(content: string, max = 160) {
   const plain = content.replace(/[#*_>`-]/g, "").replace(/\s+/g, " ").trim();
   return plain.length > max ? `${plain.slice(0, max).trim()}...` : plain;

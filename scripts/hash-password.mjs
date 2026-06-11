@@ -12,7 +12,7 @@ const escapedHash = hash.replaceAll("$", "\\$");
 
 console.log("Generated admin password hash.");
 console.log("");
-console.log("Copy this full line into .env.local for local development:");
+console.log("Copy this full line into .env:");
 console.log(`ADMIN_PASSWORD_HASH=${escapedHash}`);
 console.log("");
 console.log("For cPanel production, set variable ADMIN_PASSWORD_HASH to this raw value:");

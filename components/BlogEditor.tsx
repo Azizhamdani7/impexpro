@@ -22,6 +22,7 @@ export function BlogEditor({ blog }: BlogEditorProps) {
   const [loading, setLoading] = useState(false);
 
   const previewSlug = useMemo(() => slug || slugify(title), [slug, title]);
+  const previewHref = blog ? `/admin/blogs/preview/${blog.id}` : "";
 
   function updateTitle(value: string) {
     setTitle(value);
@@ -35,6 +36,8 @@ export function BlogEditor({ blog }: BlogEditorProps) {
     setMessage("");
 
     const form = new FormData(event.currentTarget);
+    const publishStatus = form.get("publishStatus") === "published" ? "published" : "draft";
+    setStatus(publishStatus);
     const payload = {
       title,
       slug: previewSlug,
@@ -44,7 +47,7 @@ export function BlogEditor({ blog }: BlogEditorProps) {
       category: form.get("category"),
       tags: parseTags(String(form.get("tags") || "")),
       author: form.get("author"),
-      status,
+      status: publishStatus,
       metaTitle: form.get("metaTitle"),
       metaDescription: form.get("metaDescription"),
       canonicalUrl: form.get("canonicalUrl")
@@ -64,7 +67,7 @@ export function BlogEditor({ blog }: BlogEditorProps) {
       return;
     }
 
-    setMessage("Blog saved successfully.");
+    setMessage(publishStatus === "published" ? "Blog published successfully." : "Draft saved successfully.");
     router.push("/admin/blogs");
     router.refresh();
   }
@@ -89,18 +92,17 @@ export function BlogEditor({ blog }: BlogEditorProps) {
                 setManualSlug(true);
                 setSlug(slugify(e.target.value));
               }}
-              required
             />
             {errors.slug ? <span className="field-error">{errors.slug}</span> : null}
           </div>
           <div className="form-group">
             <label htmlFor="excerpt">Excerpt</label>
-            <textarea id="excerpt" name="excerpt" defaultValue={blog?.excerpt || ""} required />
+            <textarea id="excerpt" name="excerpt" defaultValue={blog?.excerpt || ""} />
             {errors.excerpt ? <span className="field-error">{errors.excerpt}</span> : null}
           </div>
           <div className="form-group">
             <label htmlFor="content">Content</label>
-            <textarea id="content" name="content" className="content-editor" defaultValue={blog?.content || ""} required />
+            <textarea id="content" name="content" className="content-editor" defaultValue={blog?.content || ""} />
             {errors.content ? <span className="field-error">{errors.content}</span> : null}
           </div>
         </div>
@@ -119,7 +121,7 @@ export function BlogEditor({ blog }: BlogEditorProps) {
           </div>
           <div className="form-group">
             <label htmlFor="category">Category</label>
-            <input id="category" name="category" defaultValue={blog?.category || ""} required />
+            <input id="category" name="category" defaultValue={blog?.category || "General"} />
             {errors.category ? <span className="field-error">{errors.category}</span> : null}
           </div>
           <div className="form-group">
@@ -128,24 +130,40 @@ export function BlogEditor({ blog }: BlogEditorProps) {
           </div>
           <div className="form-group">
             <label htmlFor="author">Author</label>
-            <input id="author" name="author" defaultValue={blog?.author || "Impex-Pro Team"} required />
+            <input id="author" name="author" defaultValue={blog?.author || "Impex-Pro Team"} />
             {errors.author ? <span className="field-error">{errors.author}</span> : null}
           </div>
           <div className="form-group">
             <label htmlFor="metaTitle">Meta Title</label>
             <input id="metaTitle" name="metaTitle" defaultValue={blog?.metaTitle || ""} />
+            {errors.metaTitle ? <span className="field-error">{errors.metaTitle}</span> : null}
           </div>
           <div className="form-group">
             <label htmlFor="metaDescription">Meta Description</label>
             <textarea id="metaDescription" name="metaDescription" defaultValue={blog?.metaDescription || ""} />
+            {errors.metaDescription ? <span className="field-error">{errors.metaDescription}</span> : null}
           </div>
           <div className="form-group">
             <label htmlFor="canonicalUrl">Canonical URL</label>
             <input id="canonicalUrl" name="canonicalUrl" defaultValue={blog?.canonicalUrl || ""} placeholder="https://..." />
           </div>
-          <button type="submit" className="form-submit" disabled={loading}>
-            {loading ? "Saving..." : status === "published" ? "Publish Blog" : "Save Draft"}
-          </button>
+          <div className="admin-editor-actions">
+            <button type="submit" name="publishStatus" value="draft" className="btn btn-outline-gold" disabled={loading}>
+              {loading && status === "draft" ? "Saving..." : "Save Draft"}
+            </button>
+            <button type="submit" name="publishStatus" value="published" className="form-submit" disabled={loading}>
+              {loading && status === "published"
+                ? "Publishing..."
+                : blog?.status === "published"
+                  ? "Update Published Blog"
+                  : "Publish Blog"}
+            </button>
+            {previewHref ? (
+              <a className="btn btn-navy" href={previewHref} target="_blank" rel="noreferrer">
+                Preview
+              </a>
+            ) : null}
+          </div>
         </aside>
       </div>
     </form>

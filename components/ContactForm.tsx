@@ -50,7 +50,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="contact-form-wrap motion-item">
+    <div className="contact-form-wrap">
       <h3>Request a Free Consultation</h3>
       {message ? (
         <div className={`form-msg form-msg-enter ${state === "success" ? "success" : "error"}`}>

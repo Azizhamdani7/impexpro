@@ -14,13 +14,13 @@ export async function POST(request: Request) {
         code: "ADMIN_AUTH_CONFIG_ERROR",
         error: config.message,
         setup:
-          "Run npm install to create .env.local from .env.example, confirm ADMIN_PASSWORD_HASH and AUTH_SECRET are set, then restart npm run dev."
+          "Create .env in the project root, set AUTH_SECRET and ADMIN_PASSWORD_HASH, then restart npm run dev."
       },
       { status: 500 }
     );
   }
 
-  if (typeof password !== "string") {
+  if (typeof password !== "string" || !password.trim()) {
     return NextResponse.json({ error: "Password is required." }, { status: 400 });
   }
 

@@ -1,56 +1,61 @@
 # Troubleshooting
 
-## Admin Login Fails
+## Admin Login Shows A Config Error
 
-Local password:
-
-```txt
-admin123
-```
-
-If login shows a config error, run:
-
-```bash
-npm run setup
-```
-
-Then confirm `.env.local` has:
+Create `.env` in the project root and set:
 
 ```env
 AUTH_SECRET=...
 ADMIN_PASSWORD_HASH=...
 ```
 
-Restart the dev server after changing env values.
-
-## Change Admin Password
+Generate a hash:
 
 ```bash
 npm run hash-password -- "new-secure-password"
 ```
 
-Copy the generated `ADMIN_PASSWORD_HASH=...` line into `.env.local` for local development.
+Restart the dev server after changing env values.
 
-For cPanel production, set `ADMIN_PASSWORD_HASH` in Node.js App Environment Variables to the raw hash value printed by the script, then restart the app.
+## Wrong Admin Password
+
+The login page returns `Invalid password`. Generate a new hash, update `ADMIN_PASSWORD_HASH`, and restart the app.
 
 ## Contact Form Saves But Email Does Not Arrive
 
-Set SMTP variables in `.env.local` or production env, then run:
+Set SMTP variables in `.env` or production environment variables:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your-gmail@gmail.com
+SMTP_PASS=your-gmail-app-password
+CONTACT_RECEIVER_EMAIL=receiver@example.com
+```
+
+Then run:
 
 ```bash
 node scripts/verify-smtp.mjs
 ```
 
+## Admin Reply Cannot Be Sent
+
+Portal replies require SMTP. If SMTP is missing or invalid, the reply is not saved as sent.
+
+Customer replies to sent emails go to Gmail and are not synced back into the portal.
+
 ## Missing Data Files
 
-Run:
+No manual action is normally required. The app creates missing files automatically:
 
-```bash
-npm run setup
+```txt
+data/blogs.json
+data/submissions.json
 ```
 
-This recreates missing `data/blogs.json` and `data/submissions.json` without overwriting existing files.
+If creation fails in production, check write permissions for the Node.js app user.
 
-## Production Env Confusion
+## Draft Blog Does Not Appear Publicly
 
-On cPanel/production, use the Node.js App Environment Variables panel. The setup script skips `.env.local` creation when `NODE_ENV=production`.
+This is expected. Only `published` blogs appear on public routes and in the sitemap.

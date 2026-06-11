@@ -21,7 +21,9 @@ export function ClientEffects() {
       ".about-card",
       ".about-img-wrap",
       ".contact-item",
-      ".cta-inner"
+      ".contact-form-wrap",
+      ".cta-inner",
+      "footer"
     ].join(",");
 
     const elements = Array.from(document.querySelectorAll<HTMLElement>(selectors));
