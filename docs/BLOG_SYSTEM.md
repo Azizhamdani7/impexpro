@@ -16,18 +16,19 @@ Admin routes:
 /admin/blogs/preview/[id]
 ```
 
-Blog posts are stored in:
+Blog posts are stored in MongoDB Atlas:
 
 ```txt
-data/blogs.json
+Collection: blogs
 ```
 
 ## Statuses
 
 - `draft`: visible only in admin
 - `published`: visible publicly, included in sitemap
+- `archived`: hidden publicly and retained in admin
 
-Drafts do not appear on `/blogs`, `/blogs/[slug]`, or `sitemap.xml`.
+Only published posts appear on `/blogs`, `/blogs/[slug]`, and `sitemap.xml`.
 
 ## Draft And Publish Rules
 
@@ -42,6 +43,6 @@ Before publishing, these fields are required:
 - Meta title
 - Meta description
 
-The admin blog list supports edit, preview, publish, unpublish, and delete actions.
+The admin blog list supports edit, preview, publish, unpublish, archive, restore, and delete actions.
 
 Images can be local `/public` paths or public URLs.

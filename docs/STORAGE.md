@@ -1,16 +1,36 @@
 # Storage
 
-Runtime data is stored in JSON files:
+Runtime data is stored in MongoDB Atlas.
+
+Collections:
+
+```txt
+blogs
+submissions
+```
+
+Local JSON storage is removed from the active app workflow. The app no longer writes to:
 
 ```txt
 data/blogs.json
 data/submissions.json
 ```
 
-The files are created automatically when the app first reads or writes them.
+The `data/` folder may still exist locally from older versions, and it remains gitignored, but production must not depend on it.
 
-The `data/` folder is not inside `public/`, so visitors cannot download it directly.
+## Required Variables
 
-Back up `data/` before deployments.
+```env
+MONGODB_URI=
+MONGODB_DB=impexpro
+```
 
-This storage is intended for low-volume CMS and contact form usage. If the site grows heavily, move to a database.
+## Indexes
+
+Run once after configuring MongoDB:
+
+```bash
+npm run db:indexes
+```
+
+This creates indexes for blog slugs/status/published dates and submission status/created dates.

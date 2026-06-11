@@ -6,13 +6,13 @@ The contact form posts to:
 /api/contact
 ```
 
-Every valid submission is saved to:
+Every valid submission is saved to MongoDB Atlas:
 
 ```txt
-data/submissions.json
+Collection: submissions
 ```
 
-The app stores the original incoming message and any admin portal replies in a local thread on the submission record.
+Each submission stores the original incoming message and any admin portal replies in its `thread` array.
 
 ## Gmail SMTP
 
@@ -28,7 +28,7 @@ CONTACT_RECEIVER_EMAIL=receiver@example.com
 
 Gmail requires an App Password for `SMTP_PASS`.
 
-If SMTP is not configured, the public contact form still saves the submission locally, but admin portal replies cannot be sent.
+If SMTP fails after MongoDB save, the submission remains stored and the server logs the email error.
 
 Verify SMTP:
 

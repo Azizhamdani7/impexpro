@@ -12,6 +12,8 @@ Create `.env` using `docs/ENVIRONMENT_SETUP.md`, then run:
 npm run dev
 ```
 
+Local development uses MongoDB Atlas too. There is no local JSON storage fallback.
+
 ## Admin Login
 
 Admin login is password-only. Use the password that matches `ADMIN_PASSWORD_HASH`.
@@ -24,16 +26,20 @@ npm run hash-password -- "new-secure-password"
 
 Paste the generated hash into `.env`, then restart the dev server.
 
-## Data Files
+## MongoDB
 
-The app creates these automatically when needed:
+Set:
 
-```txt
-data/blogs.json
-data/submissions.json
+```env
+MONGODB_URI=
+MONGODB_DB=impexpro
 ```
 
-No manual JSON file creation is required.
+Then run:
+
+```bash
+npm run db:indexes
+```
 
 ## Public Contact Details
 

@@ -23,6 +23,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[contact-submit]", error);
-    return NextResponse.json({ error: "We could not send your message right now." }, { status: 500 });
+    const message = error instanceof Error && error.message.includes("MONGODB")
+      ? "Contact storage is not configured correctly. Please check MongoDB settings."
+      : "We could not send your message right now.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,4 +1,22 @@
 import { MongoClient } from "mongodb";
+import { readFile } from "node:fs/promises";
+
+async function loadDotEnv() {
+  try {
+    const raw = await readFile(".env", "utf8");
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
+      const [key, ...parts] = trimmed.split("=");
+      if (process.env[key]) continue;
+      process.env[key] = parts.join("=").replace(/^['"]|['"]$/g, "");
+    }
+  } catch {
+    // .env is optional; hosted environments provide real env vars directly.
+  }
+}
+
+await loadDotEnv();
 
 const uri = process.env.MONGODB_URI?.trim();
 const dbName = process.env.MONGODB_DB?.trim();

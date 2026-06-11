@@ -1,18 +1,17 @@
 # Deployment Checklist
 
-- Use Node.js 20+.
-- Set Application startup file to `server.js`.
-- Set production variables in `.env` or in the cPanel Node.js App panel.
+- Connect the Git repository to Vercel.
+- Set all required Vercel Environment Variables.
+- Set `MONGODB_URI`.
+- Set `MONGODB_DB=impexpro`.
 - Set production `AUTH_SECRET`.
 - Set production `ADMIN_PASSWORD_HASH`.
-- Optional: set Gmail SMTP variables.
-- Run NPM Install.
-- Run JS Script -> `build`.
-- Restart App.
-- If cPanel previously failed with a TypeScript/WebAssembly out-of-memory error, pull the latest Git changes and run NPM Install again before building.
+- Set Gmail SMTP variables.
+- Deploy from Vercel.
+- Run `npm run db:indexes` from an environment that can access MongoDB Atlas.
 - Confirm `/admin/login` works with the production password.
-- Confirm contact form submissions save to `data/submissions.json`.
-- Confirm blog creation writes to `data/blogs.json`.
-- Back up `data/` before future deployments.
+- Confirm contact form submissions save to MongoDB `submissions`.
+- Confirm blog creation writes to MongoDB `blogs`.
+- Confirm `/blogs` shows only published posts.
 
-Do not deploy `out/`; this app needs the Next.js server.
+Old local JSON storage is deprecated and not used in production.

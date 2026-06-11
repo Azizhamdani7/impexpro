@@ -1,61 +1,28 @@
 # Deployment
 
-This is a Node-hosted Next.js app. Do not deploy `out/`.
+Vercel is the primary production target for this app.
 
-## Local Production Check
+## Vercel Setup
 
-```bash
+1. Connect the Git repository to Vercel.
+2. Set Framework Preset to `Next.js`.
+3. Set required Environment Variables.
+4. Deploy.
+
+Vercel runs:
+
+```txt
 npm install
 npm run build
-npm run start
 ```
 
-`npm run start` runs the root startup file:
+The app uses MongoDB Atlas for all runtime data, so no local filesystem storage is required.
 
-```txt
-server.js
-```
-
-## cPanel Node.js App Settings
-
-Use these settings in HosterPK/cPanel Node.js App Manager:
-
-```txt
-Node version: 20.x
-Application startup file: server.js
-```
-
-The server reads `process.env.PORT` from cPanel and listens on `0.0.0.0`, which is compatible with cPanel reverse proxy routing.
-
-## cPanel Deployment Sequence
-
-After pulling the latest Git changes in cPanel Git Version Control:
-
-```txt
-Run NPM Install
-Run JS Script -> build
-Restart App
-```
-
-Do not set the startup file to `node_modules/...`. cPanel requires the real root file `server.js`.
-
-## cPanel Build Notes
-
-cPanel/CloudLinux may install only production dependencies before running `next build`.
-For that reason, build-time packages such as TypeScript, Tailwind, PostCSS, and ESLint are listed in `dependencies`, not `devDependencies`.
-
-The project also uses `next.config.js` and `tailwind.config.js` instead of TypeScript config files, so Next.js does not try to auto-install TypeScript during deployment. This avoids the cPanel error:
-
-```txt
-WebAssembly.instantiate(): Out of memory
-Installing TypeScript as it was not found while loading "next.config.ts"
-```
-
-## Production Environment Variables
-
-Set these in cPanel Node.js App Environment Variables or your host's environment panel:
+## Required Production Environment Variables
 
 ```env
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB=impexpro
 AUTH_SECRET=your-long-random-production-secret
 ADMIN_PASSWORD_HASH=bcrypt-hash
 SMTP_HOST=smtp.gmail.com
@@ -71,19 +38,37 @@ Generate the admin password hash:
 npm run hash-password -- "your-secure-password"
 ```
 
-Restart the app after changing environment variables.
+## MongoDB Indexes
 
-## Data
+After configuring `MONGODB_URI` and `MONGODB_DB`, run:
 
-Runtime data is stored in:
-
-```txt
-data/blogs.json
-data/submissions.json
+```bash
+npm run db:indexes
 ```
 
-The app creates missing data files automatically. Make sure the Node.js app user can write to the project folder and back up `data/` before redeploying.
+Run this locally with production MongoDB variables, or from any environment that can connect to Atlas.
 
-## Public Site Details
+## Storage
 
-Public phone, email, address, WhatsApp, and site URL are configured in `lib/site-config.ts`.
+Runtime data is stored in MongoDB Atlas collections:
+
+```txt
+blogs
+submissions
+```
+
+The old local JSON files are removed from active production use.
+
+## Optional cPanel Note
+
+If deploying to cPanel Node.js App instead of Vercel:
+
+```txt
+Node version: 20.x
+Application startup file: server.js
+Run NPM Install
+Run JS Script -> build
+Restart App
+```
+
+The root `server.js` file remains compatible with cPanel, but Vercel does not use it.

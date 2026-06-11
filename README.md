@@ -1,6 +1,6 @@
 # Impex Alliance Group Website
 
-Next.js App Router website for Impex-Pro with a file-based blog CMS, password-only admin login, Gmail SMTP contact notifications, and admin portal replies.
+Next.js App Router website for Impex-Pro with a MongoDB-backed blog CMS, password-only admin login, Gmail SMTP contact notifications, and admin portal replies.
 
 ## Quick Start
 
@@ -10,7 +10,7 @@ cd <repo-folder>
 npm install
 ```
 
-Create `.env` in the project root before using admin login or email features. See `docs/ENVIRONMENT_SETUP.md`.
+Create `.env` in the project root before using the app locally. See `docs/ENVIRONMENT_SETUP.md` and `docs/MONGODB_SETUP.md`.
 
 Then run:
 
@@ -24,7 +24,8 @@ Open the local URL printed by Next.js, usually `http://localhost:3000`.
 
 - There is no `.env.example` file.
 - `.env` is not generated automatically.
-- `data/blogs.json` and `data/submissions.json` are created automatically when needed.
+- MongoDB Atlas is required for blogs, contact submissions, and admin reply threads.
+- Local JSON storage is removed from the active app workflow.
 - Public site details live in `lib/site-config.ts`.
 - Admin login is password-only.
 
@@ -48,11 +49,13 @@ npm run lint
 npm run build
 npm run start
 npm run hash-password -- "new-password"
+npm run db:indexes
 ```
 
 ## Docs
 
 - `docs/ENVIRONMENT_SETUP.md`
+- `docs/MONGODB_SETUP.md`
 - `docs/LOCAL_DEVELOPMENT.md`
 - `docs/DEPLOYMENT.md`
 - `docs/AUTHENTICATION.md`

@@ -1,8 +1,23 @@
 # Troubleshooting
 
+## MongoDB Config Error
+
+If contact forms, blogs, or admin submissions return a server error, confirm these variables exist in `.env` locally and in Vercel Environment Variables:
+
+```env
+MONGODB_URI=...
+MONGODB_DB=impexpro
+```
+
+Then run:
+
+```bash
+npm run db:indexes
+```
+
 ## Admin Login Shows A Config Error
 
-Create `.env` in the project root and set:
+Set:
 
 ```env
 AUTH_SECRET=...
@@ -15,7 +30,7 @@ Generate a hash:
 npm run hash-password -- "new-secure-password"
 ```
 
-Restart the dev server after changing env values.
+Restart the dev server or redeploy after changing env values.
 
 ## Wrong Admin Password
 
@@ -23,7 +38,7 @@ The login page returns `Invalid password`. Generate a new hash, update `ADMIN_PA
 
 ## Contact Form Saves But Email Does Not Arrive
 
-Set SMTP variables in `.env` or production environment variables:
+Set SMTP variables in `.env` or Vercel Environment Variables:
 
 ```env
 SMTP_HOST=smtp.gmail.com
@@ -45,17 +60,10 @@ Portal replies require SMTP. If SMTP is missing or invalid, the reply is not sav
 
 Customer replies to sent emails go to Gmail and are not synced back into the portal.
 
-## Missing Data Files
-
-No manual action is normally required. The app creates missing files automatically:
-
-```txt
-data/blogs.json
-data/submissions.json
-```
-
-If creation fails in production, check write permissions for the Node.js app user.
-
 ## Draft Blog Does Not Appear Publicly
 
 This is expected. Only `published` blogs appear on public routes and in the sitemap.
+
+## Old data Folder
+
+The old `data/` JSON storage is deprecated. If a local `data/` folder exists, the app ignores it.
