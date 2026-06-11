@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readJsonFile, writeJsonFile } from "@/lib/file-store";
+import { getBlogsCollection } from "@/lib/mongodb";
 import {
   parseTags,
   slugify,
@@ -13,7 +13,6 @@ export { excerptFromContent, formatDate, parseTags, readingTime, slugify } from 
 export type { Blog, BlogFormInput, BlogStatus, PublicBlog } from "@/lib/blog-shared";
 
 export const BLOG_PAGE_SIZE = 6;
-const BLOGS_FILE = "blogs.json";
 
 function cleanText(value: unknown, max = 5000) {
   return String(value || "")
@@ -30,7 +29,8 @@ export function validateBlogInput(input: Partial<BlogFormInput>) {
   const content = cleanText(input.content, 100000);
   const category = cleanText(input.category, 80) || "General";
   const author = cleanText(input.author, 120) || "Impex-Pro Team";
-  const status: BlogStatus = input.status === "published" ? "published" : "draft";
+  const status: BlogStatus =
+    input.status === "published" || input.status === "archived" ? input.status : "draft";
   const coverImage = cleanText(input.coverImage, 1000) || undefined;
   const metaTitle = cleanText(input.metaTitle, 180) || undefined;
   const metaDescription = cleanText(input.metaDescription, 300) || undefined;
@@ -73,33 +73,26 @@ export function validateBlogInput(input: Partial<BlogFormInput>) {
 }
 
 export async function getAllBlogs() {
-  const blogs = await readJsonFile<Blog[]>(BLOGS_FILE, []);
-  return blogs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-}
-
-export async function saveAllBlogs(blogs: Blog[]) {
-  await writeJsonFile(BLOGS_FILE, blogs);
+  const collection = await getBlogsCollection();
+  return collection.find({}).sort({ updatedAt: -1 }).toArray();
 }
 
 export async function getPublishedBlogs(): Promise<PublicBlog[]> {
-  const blogs = await getAllBlogs();
-  return blogs
-    .filter((blog) => blog.status === "published")
-    .sort(
-      (a, b) =>
-        new Date(b.publishedAt || b.createdAt).getTime() -
-        new Date(a.publishedAt || a.createdAt).getTime()
-    );
+  const collection = await getBlogsCollection();
+  return collection
+    .find({ status: "published" })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .toArray();
 }
 
 export async function getBlogById(id: string) {
-  const blogs = await getAllBlogs();
-  return blogs.find((blog) => blog.id === id) || null;
+  const collection = await getBlogsCollection();
+  return collection.findOne({ id });
 }
 
 export async function getPublishedBlogBySlug(slug: string): Promise<PublicBlog | null> {
-  const blogs = await getPublishedBlogs();
-  return blogs.find((blog) => blog.slug === slug) || null;
+  const collection = await getBlogsCollection();
+  return collection.findOne({ slug, status: "published" });
 }
 
 export async function getRelatedBlogs(blog: PublicBlog, take = 3): Promise<PublicBlog[]> {
@@ -114,8 +107,9 @@ export async function createBlog(input: Partial<BlogFormInput>) {
   const result = validateBlogInput(input);
   if (!result.ok) return { ok: false as const, errors: result.errors };
 
-  const blogs = await getAllBlogs();
-  if (blogs.some((blog) => blog.slug === result.data.slug)) {
+  const collection = await getBlogsCollection();
+  const existing = await collection.findOne({ slug: result.data.slug });
+  if (existing) {
     return { ok: false as const, errors: { slug: "This slug is already in use." } };
   }
 
@@ -128,7 +122,7 @@ export async function createBlog(input: Partial<BlogFormInput>) {
     updatedAt: now
   };
 
-  await saveAllBlogs([blog, ...blogs]);
+  await collection.insertOne(blog);
   return { ok: true as const, blog };
 }
 
@@ -136,14 +130,15 @@ export async function updateBlog(id: string, input: Partial<BlogFormInput>) {
   const result = validateBlogInput(input);
   if (!result.ok) return { ok: false as const, errors: result.errors };
 
-  const blogs = await getAllBlogs();
-  const index = blogs.findIndex((blog) => blog.id === id);
-  if (index < 0) return { ok: false as const, status: 404, error: "Blog not found." };
-  if (blogs.some((blog) => blog.id !== id && blog.slug === result.data.slug)) {
+  const collection = await getBlogsCollection();
+  const existing = await collection.findOne({ id });
+  if (!existing) return { ok: false as const, status: 404, error: "Blog not found." };
+
+  const duplicate = await collection.findOne({ id: { $ne: id }, slug: result.data.slug });
+  if (duplicate) {
     return { ok: false as const, errors: { slug: "This slug is already in use." } };
   }
 
-  const existing = blogs[index];
   const now = new Date().toISOString();
   const blog: Blog = {
     ...existing,
@@ -153,15 +148,12 @@ export async function updateBlog(id: string, input: Partial<BlogFormInput>) {
     updatedAt: now
   };
 
-  blogs[index] = blog;
-  await saveAllBlogs(blogs);
+  await collection.updateOne({ id }, { $set: blog });
   return { ok: true as const, blog };
 }
 
 export async function deleteBlog(id: string) {
-  const blogs = await getAllBlogs();
-  const next = blogs.filter((blog) => blog.id !== id);
-  if (next.length === blogs.length) return false;
-  await saveAllBlogs(next);
-  return true;
+  const collection = await getBlogsCollection();
+  const result = await collection.deleteOne({ id });
+  return result.deletedCount > 0;
 }

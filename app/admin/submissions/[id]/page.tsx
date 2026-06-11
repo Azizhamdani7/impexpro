@@ -58,14 +58,14 @@ export default async function SubmissionDetailPage({ params }: PageProps) {
         </div>
         <div className="thread-list">
           {thread.map((item) => (
-            <article key={item.id} className={`thread-item ${item.type}`}>
+            <article key={item.id} className={`thread-item ${item.direction}`}>
               <div className="thread-meta">
-                <span>{item.type === "incoming" ? "Customer" : "Admin"}</span>
+                <span>{item.direction === "incoming" ? "Customer" : "Admin"}</span>
                 <span>{formatDateTime(item.createdAt)}</span>
                 {item.deliveryStatus ? <span className={`status-pill ${item.deliveryStatus}`}>{item.deliveryStatus}</span> : null}
               </div>
               <h3>{item.subject}</h3>
-              <p>{item.body}</p>
+              <p>{item.message}</p>
             </article>
           ))}
         </div>

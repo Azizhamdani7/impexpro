@@ -112,6 +112,7 @@ export function BlogEditor({ blog }: BlogEditorProps) {
             <select id="status" value={status} onChange={(e) => setStatus(e.target.value as BlogStatus)}>
               <option value="draft">Draft</option>
               <option value="published">Published</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
           <div className="form-group">

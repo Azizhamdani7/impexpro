@@ -17,14 +17,15 @@ export async function GET(request: Request) {
           .includes(q);
       return (
         matchesQuery &&
-        (status === "draft" || status === "published" ? blog.status === status : true) &&
+        (status === "draft" || status === "published" || status === "archived" ? blog.status === status : true) &&
         (!category || blog.category === category)
       );
     });
     const counts = {
       total: blogs.length,
       published: blogs.filter((blog) => blog.status === "published").length,
-      draft: blogs.filter((blog) => blog.status === "draft").length
+      draft: blogs.filter((blog) => blog.status === "draft").length,
+      archived: blogs.filter((blog) => blog.status === "archived").length
     };
     return NextResponse.json({ blogs, counts });
   } catch (error) {

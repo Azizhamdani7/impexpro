@@ -35,7 +35,7 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
     if (response.ok) router.refresh();
   }
 
-  async function updateStatus(blog: Blog, nextStatus: "draft" | "published") {
+  async function updateStatus(blog: Blog, nextStatus: "draft" | "published" | "archived") {
     setUpdating(blog.id);
     const response = await fetch(`/api/admin/blogs/${blog.id}`, {
       method: "PUT",
@@ -64,6 +64,7 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
           <option value="">All statuses</option>
           <option value="published">Published</option>
           <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
         </select>
         <Link className="btn btn-gold" href="/admin/blogs/new">Create Blog</Link>
       </div>
@@ -100,9 +101,18 @@ export function AdminBlogsTable({ blogs }: AdminBlogsTableProps) {
                       <button type="button" onClick={() => updateStatus(blog, "draft")} disabled={updating === blog.id}>
                         {updating === blog.id ? "Updating" : "Unpublish"}
                       </button>
-                    ) : (
+                    ) : blog.status === "draft" ? (
                       <button type="button" onClick={() => updateStatus(blog, "published")} disabled={updating === blog.id}>
                         {updating === blog.id ? "Updating" : "Publish"}
+                      </button>
+                    ) : null}
+                    {blog.status !== "archived" ? (
+                      <button type="button" onClick={() => updateStatus(blog, "archived")} disabled={updating === blog.id}>
+                        {updating === blog.id ? "Updating" : "Archive"}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => updateStatus(blog, "draft")} disabled={updating === blog.id}>
+                        {updating === blog.id ? "Updating" : "Restore"}
                       </button>
                     )}
                     <button className="danger-action" type="button" onClick={() => remove(blog.id)} disabled={deleting === blog.id}>

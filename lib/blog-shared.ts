@@ -1,4 +1,4 @@
-export type BlogStatus = "draft" | "published";
+export type BlogStatus = "draft" | "published" | "archived";
 
 export type Blog = {
   id: string;

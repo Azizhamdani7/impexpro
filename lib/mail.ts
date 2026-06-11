@@ -96,7 +96,7 @@ function createPlainTextEmail(submission: ContactSubmission) {
     "New Impex-Pro Contact Inquiry",
     "",
     "Inquiry Summary",
-    `Form type: ${cleanText(submission.type)}`,
+    `Form type: ${cleanText(submission.formType)}`,
     `Submitted: ${formatSubmittedAt(submission.createdAt)}`,
     `Source page: ${cleanText(submission.sourcePage)}`,
     "",
@@ -168,7 +168,7 @@ function createHtmlEmail(submission: ContactSubmission) {
               <td style="background:#ffffff;border-radius:18px;padding:24px 26px;border:1px solid #e2e8f0;box-shadow:0 12px 30px rgba(11,32,61,0.08);">
                 ${sectionTitle("Inquiry Summary", "New Lead")}
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  ${labelValue("Form type", submission.type)}
+                  ${labelValue("Form type", submission.formType)}
                   ${labelValue("Submitted", submittedAt)}
                   ${labelValue("Source page", submission.sourcePage)}
                 </table>

@@ -1,22 +1,22 @@
 import { randomUUID } from "node:crypto";
-import { readJsonFile, writeJsonFile } from "@/lib/file-store";
+import { getSubmissionsCollection } from "@/lib/mongodb";
 
 export type SubmissionStatus = "unread" | "read" | "replied";
 
 export type SubmissionThreadItem = {
   id: string;
-  type: "incoming" | "outgoing";
-  from: "customer" | "admin";
-  to: "admin" | string;
-  subject: string;
-  body: string;
+  direction: "incoming" | "outgoing";
+  from?: string;
+  to?: string;
+  subject?: string;
+  message: string;
   createdAt: string;
   deliveryStatus?: "sent" | "failed";
 };
 
 export type ContactSubmission = {
   id: string;
-  type: string;
+  formType: string;
   name: string;
   email: string;
   phone?: string;
@@ -32,7 +32,6 @@ export type ContactSubmission = {
   thread?: SubmissionThreadItem[];
 };
 
-const SUBMISSIONS_FILE = "submissions.json";
 const recentSubmissions = new Map<string, number>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const DUPLICATE_WINDOW_MS = 10 * 60_000;
@@ -68,28 +67,24 @@ export function normalizeSubmissionThread(submission: ContactSubmission): Submis
   return [
     {
       id: `${submission.id}-incoming`,
-      type: "incoming",
+      direction: "incoming",
       from: "customer",
       to: "admin",
       subject: defaultReplySubject(submission).replace(/^Re:\s*/i, ""),
-      body: submission.message,
+      message: submission.message,
       createdAt: submission.createdAt
     }
   ];
 }
 
 export async function getSubmissions() {
-  const submissions = await readJsonFile<ContactSubmission[]>(SUBMISSIONS_FILE, []);
-  return submissions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
-async function saveSubmissions(submissions: ContactSubmission[]) {
-  await writeJsonFile(SUBMISSIONS_FILE, submissions);
+  const collection = await getSubmissionsCollection();
+  return collection.find({}).sort({ createdAt: -1 }).toArray();
 }
 
 export async function getSubmission(id: string) {
-  const submissions = await getSubmissions();
-  return submissions.find((submission) => submission.id === id) || null;
+  const collection = await getSubmissionsCollection();
+  return collection.findOne({ id });
 }
 
 export async function createSubmission(input: Record<string, unknown>, userAgent?: string) {
@@ -111,13 +106,13 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
     return { ok: false as const, errors };
   }
 
-  const submissions = await getSubmissions();
-  const duplicate = submissions.find(
-    (submission) =>
-      submission.email.toLowerCase() === email &&
-      submission.message === message &&
-      nowMs - new Date(submission.createdAt).getTime() < DUPLICATE_WINDOW_MS
-  );
+  const collection = await getSubmissionsCollection();
+  const duplicateSince = new Date(nowMs - DUPLICATE_WINDOW_MS).toISOString();
+  const duplicate = await collection.findOne({
+    email,
+    message,
+    createdAt: { $gte: duplicateSince }
+  });
   if (duplicate) {
     return { ok: false as const, errors: { form: "This message was already submitted recently." } };
   }
@@ -125,7 +120,7 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
   const now = new Date().toISOString();
   const submission: ContactSubmission = {
     id: randomUUID(),
-    type: clean(input.type, 80) || "contact",
+    formType: clean(input.type, 80) || "contact",
     name: clean(input.name, 180),
     email,
     phone: clean(input.phone, 80) || undefined,
@@ -141,12 +136,12 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
     thread: [
       {
         id: randomUUID(),
-        type: "incoming",
+        direction: "incoming",
         from: "customer",
         to: "admin",
         subject: defaultReplySubject({
           id: "",
-          type: clean(input.type, 80) || "contact",
+          formType: clean(input.type, 80) || "contact",
           name: clean(input.name, 180),
           email,
           message,
@@ -155,33 +150,33 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
           createdAt: now,
           updatedAt: now
         }),
-        body: message,
+        message,
         createdAt: now
       }
     ]
   };
 
-  await saveSubmissions([submission, ...submissions]);
+  await collection.insertOne(submission);
   recentSubmissions.set(key, nowMs);
   return { ok: true as const, submission };
 }
 
 export async function updateSubmissionStatus(id: string, status: SubmissionStatus) {
-  const submissions = await getSubmissions();
-  const index = submissions.findIndex((submission) => submission.id === id);
-  if (index < 0) return null;
-  submissions[index] = { ...submissions[index], status, updatedAt: new Date().toISOString() };
-  await saveSubmissions(submissions);
-  return submissions[index];
+  const collection = await getSubmissionsCollection();
+  const updatedAt = new Date().toISOString();
+  const result = await collection.findOneAndUpdate(
+    { id },
+    { $set: { status, updatedAt } },
+    { returnDocument: "after" }
+  );
+  return result;
 }
 
 export async function addSubmissionReply(id: string, reply: { subject: string; body: string }) {
-  const submissions = await getSubmissions();
-  const index = submissions.findIndex((submission) => submission.id === id);
-  if (index < 0) return null;
-
+  const collection = await getSubmissionsCollection();
+  const existing = await collection.findOne({ id });
+  if (!existing) return null;
   const now = new Date().toISOString();
-  const existing = submissions[index];
   const thread = normalizeSubmissionThread(existing);
   const updated: ContactSubmission = {
     ...existing,
@@ -191,26 +186,23 @@ export async function addSubmissionReply(id: string, reply: { subject: string; b
       ...thread,
       {
         id: randomUUID(),
-        type: "outgoing",
+        direction: "outgoing",
         from: "admin",
         to: existing.email,
         subject: clean(reply.subject, 240) || defaultReplySubject(existing),
-        body: clean(reply.body, 8000),
+        message: clean(reply.body, 8000),
         createdAt: now,
         deliveryStatus: "sent"
       }
     ]
   };
 
-  submissions[index] = updated;
-  await saveSubmissions(submissions);
+  await collection.updateOne({ id }, { $set: updated });
   return updated;
 }
 
 export async function deleteSubmission(id: string) {
-  const submissions = await getSubmissions();
-  const next = submissions.filter((submission) => submission.id !== id);
-  if (next.length === submissions.length) return false;
-  await saveSubmissions(next);
-  return true;
+  const collection = await getSubmissionsCollection();
+  const result = await collection.deleteOne({ id });
+  return result.deletedCount > 0;
 }

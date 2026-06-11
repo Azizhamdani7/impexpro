@@ -52,7 +52,7 @@ export function AdminSubmissionsTable({ submissions }: { submissions: ContactSub
                   <span>{submission.email}</span>
                 </td>
                 <td><span className={`status-pill ${submission.status}`}>{submission.status}</span></td>
-                <td>{submission.service || submission.type}</td>
+                <td>{submission.service || submission.formType}</td>
                 <td>{formatDate(submission.createdAt)}</td>
                 <td>
                   <div className="admin-actions">
