@@ -9,6 +9,7 @@
 - Run NPM Install.
 - Run JS Script -> `build`.
 - Restart App.
+- If cPanel previously failed with a TypeScript/WebAssembly out-of-memory error, pull the latest Git changes and run NPM Install again before building.
 - Confirm `/admin/login` works with the production password.
 - Confirm contact form submissions save to `data/submissions.json`.
 - Confirm blog creation writes to `data/blogs.json`.

@@ -39,6 +39,18 @@ Restart App
 
 Do not set the startup file to `node_modules/...`. cPanel requires the real root file `server.js`.
 
+## cPanel Build Notes
+
+cPanel/CloudLinux may install only production dependencies before running `next build`.
+For that reason, build-time packages such as TypeScript, Tailwind, PostCSS, and ESLint are listed in `dependencies`, not `devDependencies`.
+
+The project also uses `next.config.js` and `tailwind.config.js` instead of TypeScript config files, so Next.js does not try to auto-install TypeScript during deployment. This avoids the cPanel error:
+
+```txt
+WebAssembly.instantiate(): Out of memory
+Installing TypeScript as it was not found while loading "next.config.ts"
+```
+
 ## Production Environment Variables
 
 Set these in cPanel Node.js App Environment Variables or your host's environment panel:
