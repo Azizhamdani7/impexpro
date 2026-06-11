@@ -12,6 +12,12 @@ npm install
 
 Create `.env` in the project root before using the app locally. See `docs/ENVIRONMENT_SETUP.md` and `docs/MONGODB_SETUP.md`.
 
+You can start from the template:
+
+```bash
+cp .env.example .env
+```
+
 Then run:
 
 ```bash
@@ -22,8 +28,8 @@ Open the local URL printed by Next.js, usually `http://localhost:3000`.
 
 ## Important Notes
 
-- There is no `.env.example` file.
 - `.env` is not generated automatically.
+- `.env.example` lists every required local and production variable without secrets.
 - MongoDB Atlas is required for blogs, contact submissions, and admin reply threads.
 - Local JSON storage is removed from the active app workflow.
 - Public site details live in `lib/site-config.ts`.
@@ -40,6 +46,22 @@ npm run hash-password -- "your-password"
 ```
 
 Paste the generated hash into `ADMIN_PASSWORD_HASH` in `.env` or production environment variables.
+
+## Required Environment Variables
+
+These are required locally in `.env` and on Vercel in Project Settings -> Environment Variables:
+
+```env
+MONGODB_URI=
+MONGODB_DB=impexpro
+AUTH_SECRET=
+ADMIN_PASSWORD_HASH=
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=
+SMTP_PASS=
+CONTACT_RECEIVER_EMAIL=
+```
 
 ## Commands
 
