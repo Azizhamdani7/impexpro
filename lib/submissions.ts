@@ -44,6 +44,12 @@ function clean(value: unknown, max = 1000) {
     .slice(0, max);
 }
 
+function cleanSelectValue(value: unknown, placeholders: string[], max = 180) {
+  const cleaned = clean(value, max);
+  const normalized = cleaned.toLowerCase();
+  return placeholders.some((placeholder) => placeholder.toLowerCase() === normalized) ? "" : cleaned;
+}
+
 function emailValid(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -92,6 +98,13 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
   const email = clean(input.email, 180).toLowerCase();
   const message = clean(input.message, 5000);
   const honeypot = clean(input.website, 200);
+  const service = cleanSelectValue(input.service, ["select a service", "please select a service"]);
+  const trade = cleanSelectValue(input.trade, [
+    "please choose",
+    "please select",
+    "please choose trade type",
+    "please select trade type"
+  ]);
   const key = `${email}:${message.slice(0, 120)}`;
   const last = recentSubmissions.get(key);
   const errors: Record<string, string> = {};
@@ -100,6 +113,8 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
   if (last && nowMs - last < RATE_LIMIT_WINDOW_MS) errors.form = "Please wait a moment before submitting again.";
   if (!clean(input.name, 180)) errors.name = "Name is required.";
   if (!email || !emailValid(email)) errors.email = "A valid email is required.";
+  if (!service) errors.service = "Please select a service.";
+  if (!trade) errors.trade = "Please choose a trade type.";
   if (!message) errors.message = "Message is required.";
 
   if (Object.keys(errors).length) {
@@ -125,8 +140,8 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
     email,
     phone: clean(input.phone, 80) || undefined,
     company: clean(input.company, 180) || undefined,
-    service: clean(input.service, 180) || undefined,
-    trade: clean(input.trade, 180) || undefined,
+    service,
+    trade,
     message,
     sourcePage: clean(input.sourcePage, 500) || undefined,
     userAgent,
@@ -145,7 +160,7 @@ export async function createSubmission(input: Record<string, unknown>, userAgent
           name: clean(input.name, 180),
           email,
           message,
-          service: clean(input.service, 180) || undefined,
+          service,
           status: "unread",
           createdAt: now,
           updatedAt: now

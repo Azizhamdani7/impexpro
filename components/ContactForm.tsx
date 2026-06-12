@@ -88,9 +88,9 @@ export function ContactForm() {
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="fservice">Service Needed</label>
-            <select id="fservice" name="service" defaultValue="">
-              <option value="">Select a service</option>
+            <label htmlFor="fservice">Service Needed *</label>
+            <select id="fservice" name="service" defaultValue="" required>
+              <option value="" disabled hidden>Please select a service</option>
               <option>Customs Clearance</option>
               <option>Freight Forwarding</option>
               <option>Business Registration</option>
@@ -101,8 +101,9 @@ export function ContactForm() {
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="ftrade">Trade Type</label>
-            <select id="ftrade" name="trade" defaultValue="Import / Export">
+            <label htmlFor="ftrade">Trade Type *</label>
+            <select id="ftrade" name="trade" defaultValue="" required>
+              <option value="" disabled hidden>Please choose trade type</option>
               <option>Import / Export</option>
               <option>Import Only</option>
               <option>Export Only</option>
